@@ -88,3 +88,54 @@ grant connect on database staging_env_db to student;
 grant usage on schema public to student;
 grant select on all tables in schema public to student;
 grant insert, update, delete on table student, student_takes_course, answer, attempt, attempt_answer, attempt_detail, ticket, user_information to student;
+
+-- Create administrator user
+CREATE OR REPLACE FUNCTION create_administrator_user()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.account_type = 'Administrator' THEN
+        EXECUTE 'CREATE USER ' || quote_ident(NEW.user_name) || ' WITH PASSWORD ''' || NEW.user_password || '''';
+        EXECUTE 'GRANT administrator TO ' || quote_ident(NEW.user_name);
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER admin_user_trigger
+AFTER INSERT ON user_information
+FOR EACH ROW
+EXECUTE FUNCTION create_administrator_user();
+
+-- Create lecturer user
+CREATE OR REPLACE FUNCTION create_lecturer_user()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.account_type = 'Lecturer' THEN
+        EXECUTE 'CREATE USER ' || quote_ident(NEW.user_name) || ' WITH PASSWORD ''' || NEW.user_password || '''';
+        EXECUTE 'GRANT lecturer TO ' || quote_ident(NEW.user_name);
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER lecturer_user_trigger
+AFTER INSERT ON user_information
+FOR EACH ROW
+EXECUTE FUNCTION create_lecturer_user();
+
+-- Create student user
+CREATE OR REPLACE FUNCTION create_student_user()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.account_type = 'Student' THEN
+        EXECUTE 'CREATE USER ' || quote_ident(NEW.user_name) || ' WITH PASSWORD ''' || NEW.user_password || '''';
+        EXECUTE 'GRANT student TO ' || quote_ident(NEW.user_name);
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER student_user_trigger
+AFTER INSERT ON user_information
+FOR EACH ROW
+EXECUTE FUNCTION create_student_user();
